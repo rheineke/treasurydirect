@@ -1,0 +1,34 @@
+[project]
+name = "treasurydirect"
+version = "0.1.0"
+description = "TreasuryDirect data retrieval and analysis"
+readme = "README.md"
+requires-python = ">=3.14.8"
+dependencies = [
+    "pandas>=3.0",
+    "requests>=2.32",
+    "sqlalchemy>=2.1",
+]
+
+[project.optional-dependencies]
+dev = ["ipdb", "mypy", "ruff"]
+test = ["pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["treasurydirect.py"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+python_files = ["*_test.py"]
