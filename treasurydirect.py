@@ -1,5 +1,20 @@
+import io
+
 import pandas as pd
 from requests import get
+
+COLUMNS = ["cusip", "announcedCusip", "corpusCusip", "originalCusip", "type"]
+
+
+def read_auctions(text):
+    return pd.read_json(io.StringIO(text), orient="records")
+
+
+def unknown_securities(df, known_cusip_df, cols=COLUMNS):
+    """Auctioned securities whose CUSIP isn't stored yet."""
+    known_cusip_lbl = df["cusip"].isin(known_cusip_df["cusip"])
+    return df.loc[~known_cusip_lbl, cols]
+
 
 if __name__ == "__main__":
     base_url = "http://www.treasurydirect.gov/TA_WS/"
@@ -15,7 +30,7 @@ if __name__ == "__main__":
     }
     endpt = base_url + auctioned_endpt
     result = get(endpt, qs)
-    df = pd.read_json(result.text, orient="records")
+    df = read_auctions(result.text)
 
     # TODO: Create connection to database
     engine = None
@@ -26,12 +41,8 @@ if __name__ == "__main__":
     known_q = f"SELECT * FROM {sec_table_name} WHERE whatever == 'baz'"
     known_cusip_df = pd.read_sql_query(known_q, engine, schema=schema)
 
-    # TODO: Filter out undesired columns though I'd keep everything
-    cols = ["cusip", "announcedCusip", "corpusCusip", "originalCusip", "type"]
-
-    # TODO: Filter out known CUSIPS from dataframe
-    known_cusip_lbl = df["cusip"].isin(known_cusip_df["cusip"])
-    unknown_df = df.loc[~known_cusip_lbl, cols]
+    # TODO: Filter out undesired columns (COLUMNS) though I'd keep everything
+    unknown_df = unknown_securities(df, known_cusip_df)
 
     # TODO: Append unknown CUSIPS to security table
     unknown_df.to_sql(sec_table_name, engine, schema=schema, if_exists="append")
